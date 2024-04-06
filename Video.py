@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 from data_functions import process_data
-from contour_functions import find_scale, measure_max_depth
+from contour_functions import find_scale, measure_max_depth, measure_max_depth_test
 
 def process_video(video_path, t_begin, t_end, f0, B, real_size, i, offsets_for_scale, offsets_for_contours):
     cap = cv2.VideoCapture(video_path)
@@ -41,7 +41,7 @@ def process_video(video_path, t_begin, t_end, f0, B, real_size, i, offsets_for_s
 
             if _ == 0:
                 time_values.append(current_time)
-            depth, area, default_depth, default_area = measure_max_depth(frame, current_time, scale, default_depth, default_area, offsets_for_contours)
+            depth, area, default_depth, default_area = measure_max_depth_test(frame, current_time, scale, default_depth, default_area, offsets_for_contours)
             depth_values[_].append(depth)
             area_values[_].append(area)
             
@@ -56,23 +56,30 @@ def process_video(video_path, t_begin, t_end, f0, B, real_size, i, offsets_for_s
 
     
 if __name__ == "__main__":
-    video_paths = ["mov\MVI_8531.MOV"]
-    save_folder = r"data\article";
+    directory_path = rf"mov\exp1\1 mm"
+    os.makedirs(directory_path, exist_ok=True)
+    video_paths = []
+    for root, dirs, files in os.walk(directory_path):
+        for file in files:
+            if file.endswith('.MOV'):
+                video_paths.append(os.path.join(root, file))
+    save_folder = rf"data\exp1\1 mm";
     os.makedirs(save_folder, exist_ok=True)
 
-    offsets_for_scale = [0, 0, 3, 10]#top, right, bottom, left
-    offsets_for_contours = [5, 25, 50, 25]#top, right, bottom, left
+    offsets_for_scale = [0, 15, 30, 40]#top, right, bottom, left
+    offsets_for_contours = [0, 40, 75, 40]#top, right, bottom, left
 
-    t_begin = 55.0  #начальный момент времени
-    t_end = 55.5    #конечный момент времени
-    f0 = 25.0        #f0 - начальная частота
+    t_begin = 0.5  #начальный момент времени
+    t_end = 15.0    #конечный момент времени
+    f0 = 10.0        #f0 - начальная частота
     B = 3*0        #B - коэффициент в экспоненте
     real_size = 15.0  #в миллиметрах 
     i = 1  #количество итераций для одного видео
 
+    #TODO: граница излучателя определить и исключить 
     for video_path in video_paths:
         filename = video_path[-12:-4]
         print(f"Filename: {filename}")
         times, depths, areas = process_video(video_path, t_begin, t_end, f0, B, real_size, i, offsets_for_scale, offsets_for_contours)
-        process_data(times, depths, os.path.join(save_folder, f"{filename}"), f"{filename}_Depth", "Time, s", "h, mm")
-        process_data(times, areas, os.path.join(save_folder, f"{filename}"), f"{filename}_Area", "Time, s", "a, mm^2")
+        process_data(times, depths, os.path.join(save_folder, f"{filename}"), f"{filename}_Depth", r'$\mathit{Время}$ $\mathit{T_{э}}$, $\mathdefault{с}$', r'$\mathit{Глубина}$ $\mathit{эрозии}$ $\mathit{L_{э}}$, $\mathdefault{мм}$')
+        process_data(times, areas, os.path.join(save_folder, f"{filename}"), f"{filename}_Area", r'$\mathit{Время}$ $\mathit{T_{э}}$, $\mathdefault{с}$',  r'$\mathit{Площадь}$ $\mathit{эрозии}$ $\mathit{S_{э}}$, $\mathdefault{мм^2}$')
